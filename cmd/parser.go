@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -18,44 +19,55 @@ func main() {
 func crawlLinks(url string) {
 	resp, err := http.Get(url)
 	if err != nil {
-		// Handle error
-		fmt.Println("Error: ", err)
+		fmt.Println("Error:", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		// Handle error
-		fmt.Println("Error: ", err)
+		fmt.Println("Error:", err)
 		return
 	}
 
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(body)))
 	if err != nil {
-		// Handle error
-		fmt.Println("Error: ", err)
+		fmt.Println("Error:", err)
 		return
 	}
 
 	ul := doc.Find("ul").First()
 	links := ul.Find("a")
 
+	linkChan := make(chan string)
+	var wg sync.WaitGroup
+	wg.Add(25)
+
+	for i := 0; i < 25; i++ {
+		go func() {
+			for link := range linkChan {
+				absoluteURL := getAbsoluteURL(url, link)
+				if !isRelativeURL(absoluteURL) {
+					if strings.HasPrefix(link, url) {
+						fmt.Println(link)
+					} else {
+						crawlLinks(absoluteURL)
+					}
+				}
+			}
+			wg.Done()
+		}()
+	}
+
 	links.Each(func(i int, s *goquery.Selection) {
 		href, exists := s.Attr("href")
-
 		if exists && href != "../" {
-			absoluteURL := getAbsoluteURL(url, href)
-			if !isRelativeURL(absoluteURL) {
-				if strings.HasPrefix(href, url) {
-					fmt.Println(href)
-					return
-				}
-				crawlLinks(absoluteURL)
-			}
+			linkChan <- href
 		}
-
 	})
+
+	close(linkChan)
+	wg.Wait()
 }
 
 func getAbsoluteURL(baseURL, href string) string {
@@ -65,15 +77,13 @@ func getAbsoluteURL(baseURL, href string) string {
 
 	base, err := url.Parse(baseURL)
 	if err != nil {
-		// Handle error
-		fmt.Println("Error parsing base URL: ", err)
+		fmt.Println("Error parsing base URL:", err)
 		return ""
 	}
 
 	relative, err := url.Parse(href)
 	if err != nil {
-		// Handle error
-		fmt.Println("Error parsing relative URL: ", err)
+		fmt.Println("Error parsing relative URL:", err)
 		return ""
 	}
 
@@ -84,9 +94,8 @@ func getAbsoluteURL(baseURL, href string) string {
 func isRelativeURL(urlString string) bool {
 	u, err := url.Parse(urlString)
 	if err != nil {
-		// Handle error
 		return false
 	}
 
-	return u.IsAbs() == false
+	return !u.IsAbs()
 }

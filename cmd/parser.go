@@ -5,16 +5,17 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"sync"
 
 	"github.com/PuerkitoBio/goquery"
 )
 
-func main() {
-	baseURL := "https://releases.hashicorp.com/"
-	crawlLinks(baseURL)
-}
+var (
+	resultMutex sync.Mutex
+	result      []string
+)
 
 func crawlLinks(url string) {
 	resp, err := http.Get(url)
@@ -49,7 +50,7 @@ func crawlLinks(url string) {
 				absoluteURL := getAbsoluteURL(url, link)
 				if !isRelativeURL(absoluteURL) {
 					if strings.HasPrefix(link, url) {
-						fmt.Println(link)
+						saveLinkToMemory(link)
 					} else {
 						crawlLinks(absoluteURL)
 					}
@@ -68,6 +69,18 @@ func crawlLinks(url string) {
 
 	close(linkChan)
 	wg.Wait()
+}
+
+func saveLinkToMemory(link string) {
+	resultMutex.Lock()
+	defer resultMutex.Unlock()
+
+	result = append(result, link)
+}
+
+func writeLinksToFile(filename string, links []string) error {
+	content := strings.Join(links, "\n")
+	return ioutil.WriteFile(filename, []byte(content), 0644)
 }
 
 func getAbsoluteURL(baseURL, href string) string {
@@ -98,4 +111,20 @@ func isRelativeURL(urlString string) bool {
 	}
 
 	return !u.IsAbs()
+}
+
+func main() {
+	baseURL := "https://releases.hashicorp.com/"
+	crawlLinks(baseURL)
+
+	// Sort the links in memory
+	sort.Strings(result)
+
+	// Write the links from memory to a file
+	if err := writeLinksToFile("output.txt", result); err != nil {
+		fmt.Println("Error writing links to file:", err)
+		return
+	}
+
+	fmt.Println("Links written to file: output.txt")
 }

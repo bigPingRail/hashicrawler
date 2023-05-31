@@ -1,0 +1,21 @@
+---
+kind: pipeline
+type: kubernetes
+name: docker-pipeline
+
+globals:
+  - &cr_creds
+    username:
+      from_secret: cr_username
+    password:
+      from_secret: cr_password
+
+steps:
+  - name: hashiparser 
+    image: plugins/docker
+    settings:
+      repo: gitea.ittests.ru/home-lab/docker
+      registry: cr.ittests.ru
+      dockerfile: ./build/Dockerfile
+      tags: ["${DRONE_COMMIT_SHA:0:7}", "latest"]
+      <<: *cr_creds

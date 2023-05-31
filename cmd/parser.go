@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"sort"
@@ -134,16 +135,26 @@ func isRelativeURL(urlString string) bool {
 func main() {
 	baseURL := "https://releases.hashicorp.com/"
 	output := "index.html"
+	port := ":8080"
+
+	fmt.Printf("Begin to parse %s\n", baseURL)
 	crawlLinks(baseURL)
 
-	// Sort the links in memory
 	sort.Strings(result)
 
-	// Write the links from memory to a file
 	if err := writeLinksToFile(output, result); err != nil {
-		fmt.Println("Error writing links to file:", err)
-		return
+		log.Fatalf("Error writing links to file: %s", err)
 	}
 
-	fmt.Printf("Links written to file: %s\n", output)
+	fmt.Printf("Done!\nLinks written to file: %s\n", output)
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, output)
+	})
+
+	fmt.Printf("Server listening on port %s...\n", port)
+	err := http.ListenAndServe(port, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -75,12 +75,30 @@ func saveLinkToMemory(link string) {
 	resultMutex.Lock()
 	defer resultMutex.Unlock()
 
-	result = append(result, link)
+	if !strings.HasSuffix(link, "HA256SUMS") && !strings.HasSuffix(link, ".sig") &&
+		(strings.Contains(link, "_linux") || strings.Contains(link, "_darwin") || strings.Contains(link, "_windows")) {
+		result = append(result, link)
+	}
 }
 
 func writeLinksToFile(filename string, links []string) error {
-	content := strings.Join(links, "\n")
-	return ioutil.WriteFile(filename, []byte(content), 0644)
+	baseHTML := "<a href={{.}}>{{.}}</a><br>"
+
+	var htmlStrings []string
+
+	for _, link := range links {
+		html := strings.Replace(baseHTML, "{{.}}", link, -1)
+		htmlStrings = append(htmlStrings, html)
+	}
+
+	outputHTML := strings.Join(htmlStrings, "\n")
+
+	err := ioutil.WriteFile(filename, []byte(outputHTML), 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func getAbsoluteURL(baseURL, href string) string {
@@ -115,16 +133,17 @@ func isRelativeURL(urlString string) bool {
 
 func main() {
 	baseURL := "https://releases.hashicorp.com/"
+	output := "index.html"
 	crawlLinks(baseURL)
 
 	// Sort the links in memory
 	sort.Strings(result)
 
 	// Write the links from memory to a file
-	if err := writeLinksToFile("output.txt", result); err != nil {
+	if err := writeLinksToFile(output, result); err != nil {
 		fmt.Println("Error writing links to file:", err)
 		return
 	}
 
-	fmt.Println("Links written to file: output.txt")
+	fmt.Printf("Links written to file: %s\n", output)
 }

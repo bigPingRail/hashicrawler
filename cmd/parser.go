@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -26,7 +27,7 @@ func crawlLinks(url string) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -94,7 +95,7 @@ func writeLinksToFile(filename string, links []string) error {
 
 	outputHTML := strings.Join(htmlStrings, "\n")
 
-	err := ioutil.WriteFile(filename, []byte(outputHTML), 0644)
+	err := os.WriteFile(filename, []byte(outputHTML), 0644)
 	if err != nil {
 		return err
 	}

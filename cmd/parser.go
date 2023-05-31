@@ -152,6 +152,10 @@ func main() {
 		http.ServeFile(w, r, output)
 	})
 
+	http.HandleFunc("/hc", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	fmt.Printf("Server listening on port %s...\n", port)
 	err := http.ListenAndServe(port, nil)
 	if err != nil {

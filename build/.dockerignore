@@ -2,4 +2,6 @@
 *
 
 # Allow files and directories
-!/cmd
+!cmd
+!templates
+!utils

@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ .title }}</title>
+</head>
+<body>
+    {{ range .url }}
+        <a href="download{{.}}">{{.}}</a><br>
+    {{ end }}
+</body>
+</html>

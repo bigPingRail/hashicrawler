@@ -1,13 +1,10 @@
-package main
+package utils
 
 import (
 	"fmt"
-	"io"
-	"log"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
-	"sort"
 	"strings"
 	"sync"
 
@@ -16,10 +13,11 @@ import (
 
 var (
 	resultMutex sync.Mutex
-	result      []string
+	Result      []string
 )
 
-func crawlLinks(url string) {
+// Public
+func CrawlLinks(url string) {
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error:", err)
@@ -27,7 +25,7 @@ func crawlLinks(url string) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return
@@ -52,9 +50,9 @@ func crawlLinks(url string) {
 				absoluteURL := getAbsoluteURL(url, link)
 				if !isRelativeURL(absoluteURL) {
 					if strings.HasPrefix(link, url) {
-						saveLinkToMemory(link)
+						saveLinkToMemory(link, "https://releases.hashicorp.com")
 					} else {
-						crawlLinks(absoluteURL)
+						CrawlLinks(absoluteURL)
 					}
 				}
 			}
@@ -73,34 +71,16 @@ func crawlLinks(url string) {
 	wg.Wait()
 }
 
-func saveLinkToMemory(link string) {
+// Private
+func saveLinkToMemory(link, baseUrl string) {
 	resultMutex.Lock()
 	defer resultMutex.Unlock()
 
 	if !strings.HasSuffix(link, "HA256SUMS") && !strings.HasSuffix(link, ".sig") &&
 		(strings.Contains(link, "_linux") || strings.Contains(link, "_darwin") || strings.Contains(link, "_windows")) {
-		result = append(result, link)
+		link := strings.TrimPrefix(link, baseUrl)
+		Result = append(Result, link)
 	}
-}
-
-func writeLinksToFile(filename string, links []string) error {
-	baseHTML := "<a href={{.}}>{{.}}</a><br>"
-
-	var htmlStrings []string
-
-	for _, link := range links {
-		html := strings.Replace(baseHTML, "{{.}}", link, -1)
-		htmlStrings = append(htmlStrings, html)
-	}
-
-	outputHTML := strings.Join(htmlStrings, "\n")
-
-	err := os.WriteFile(filename, []byte(outputHTML), 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func getAbsoluteURL(baseURL, href string) string {
@@ -131,35 +111,4 @@ func isRelativeURL(urlString string) bool {
 	}
 
 	return !u.IsAbs()
-}
-
-func main() {
-	baseURL := "https://releases.hashicorp.com/"
-	output := "index.html"
-	port := ":8080"
-
-	fmt.Printf("Begin to parse %s\n", baseURL)
-	crawlLinks(baseURL)
-
-	sort.Strings(result)
-
-	if err := writeLinksToFile(output, result); err != nil {
-		log.Fatalf("Error writing links to file: %s", err)
-	}
-
-	fmt.Printf("Done!\nLinks written to file: %s\n", output)
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, output)
-	})
-
-	http.HandleFunc("/hc", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	})
-
-	fmt.Printf("Server listening on port %s...\n", port)
-	err := http.ListenAndServe(port, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
 }

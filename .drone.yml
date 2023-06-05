@@ -4,10 +4,10 @@ type: kubernetes
 name: docker-pipeline
 
 steps:
-  - name: hashiparser 
+  - name: hashicrawler 
     image: plugins/docker
     settings:
-      repo: cr.ittests.ru/hashiparser
+      repo: cr.ittests.ru/hashicrawler
       registry: cr.ittests.ru
       dockerfile: ./build/Dockerfile
       tags: ["${DRONE_COMMIT_SHA:0:7}", "latest"]

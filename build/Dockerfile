@@ -5,7 +5,7 @@ RUN go mod download
 COPY cmd ./cmd
 COPY templates ./templates
 COPY utils ./utils
-RUN go build -ldflags "-linkmode external -extldflags -static" -o hashicrawler cmd/crawler.go && chmod +x hashicrawler
+RUN go build -ldflags "-linkmode external -extldflags -static" -o hashicrawler cmd/main.go && chmod +x hashicrawler
 
 FROM debian:11-slim
 ARG INTERNAL=false

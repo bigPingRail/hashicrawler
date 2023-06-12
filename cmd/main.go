@@ -14,12 +14,13 @@ func main() {
 
 	port := "8080"
 
-	fmt.Printf("Begin to parse %s\n", baseURL)
+	// Crawl
+	fmt.Printf("Starting crawl across %s\n", baseURL)
 	utils.CrawlLinks(baseURL)
 
 	sort.Strings(utils.Result)
 
-	// Begin serve
+	// Serve
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*")
 

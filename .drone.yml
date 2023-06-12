@@ -11,6 +11,7 @@ steps:
       registry: cr.ittests.ru
       dockerfile: ./build/Dockerfile
       tags: ["${DRONE_COMMIT_SHA:0:7}", "latest"]
+      build_args: "INTERNAL=true"
       username:
         from_secret: cr_username
       password:

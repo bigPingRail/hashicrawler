@@ -11,8 +11,8 @@ import (
 
 func DownloadHandler(w http.ResponseWriter, r *http.Request, link string) {
 	u := &url.URL{
-		Scheme: "https",
-		Host:   "releases.hashicorp.com",
+		Scheme: ConnScheme,
+		Host:   ConnHost,
 		Path:   link,
 	}
 

@@ -50,7 +50,7 @@ func CrawlLinks(url string) {
 				absoluteURL := getAbsoluteURL(url, link)
 				if !isRelativeURL(absoluteURL) {
 					if strings.HasPrefix(link, url) {
-						saveLinkToMemory(link, "https://releases.hashicorp.com")
+						saveLinkToMemory(link, fmt.Sprintf("%s://%s", ConnScheme, ConnHost))
 					} else {
 						CrawlLinks(absoluteURL)
 					}

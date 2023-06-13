@@ -1,11 +1,40 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{ .title }}</title>
+    <title>Crawled Links</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: f2f2f2;
+        }
+        h2 {
+            color: #333;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 1em 0;
+        }
+        ul {
+            list-style-type: none;
+            padding: 1em;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    {{ range .url }}
-        <a href="download{{.}}">{{.}}</a><br>
-    {{ end }}
+    <h2>Crawled Links</h2>
+    <hr>
+    <ul>
+        {{range .Keys}}
+            <li><a href="values/{{.}}">{{.}}</a></li>
+        {{end}}
+    </ul>
 </body>
 </html>

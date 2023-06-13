@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.Title}}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: f2f2f2;
+        }
+        h2 {
+            color: #333;
+            display: inline-block
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 0.5em 1.5em;
+            text-decoration: none;
+            font-size: 1em;
+            border-radius: 0.5em;
+            display: inline-block
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style-type: none;
+            padding: 1em;
+        }
+        a  {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="window.location.href='/';">Back</button>
+    <h2>{{.Title}}</h2>
+    <hr>
+    <ul>
+        {{range .Values}}
+            <li><a href="/download{{.}}" style="color: #007bff;">{{.}}</a></li>
+        {{end}}
+    </ul>
+</body>
+</html>

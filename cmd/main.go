@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
 	"releases-parser/utils"
@@ -11,12 +12,16 @@ import (
 )
 
 func main() {
-	baseURL := fmt.Sprintf("%s://%s", utils.ConnScheme, utils.ConnHost)
-	port := "8080"
+	// Parse arguments
+	port := flag.Int("p", 8080, "listen port")
+	flag.Parse()
 
 	// Crawl
-	fmt.Printf("Starting crawl across %s\n", baseURL)
+	baseURL := fmt.Sprintf("%s://%s", utils.ConnScheme, utils.ConnHost)
+
+	go utils.StartLoadingAnimation(baseURL)
 	utils.CrawlLinks(baseURL)
+	utils.StopLoadingAnimation()
 
 	sort.Strings(utils.Result)
 
@@ -29,9 +34,9 @@ func main() {
 			result[key] = append(result[key], s)
 		}
 	}
-
 	// Serve
 	r := gin.Default()
+	r.SetTrustedProxies(nil)
 	r.LoadHTMLGlob("templates/*.tmpl")
 
 	r.GET("/hc", func(c *gin.Context) {
@@ -72,5 +77,6 @@ func main() {
 		utils.DownloadHandler(c.Writer, c.Request, link)
 	})
 
-	r.Run(fmt.Sprintf(":%s", port))
+	fmt.Printf("Starting webapp at :%v\n", *port)
+	r.Run(fmt.Sprintf(":%v", *port))
 }

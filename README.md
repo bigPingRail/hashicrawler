@@ -15,13 +15,13 @@ This is a Go application that parses releases from a given base URL and provides
 
 ## Usage
 
-1. Start the application by running `./appname`.
+1. Start the application by running `GIN_MODE=release ./appname -p 8080`.
 1. Access the web interface at `http://localhost:8080`.
 
 ## Endpoints
 
 - `/hc`: Health check endpoint.
-- `/`: Home page to view available release keys.
+- `/`: Home page to view available releases.
 
 ## License
 

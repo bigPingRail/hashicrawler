@@ -1,0 +1,106 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hashicrawler
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hashicrawler-deployment
+  namespace: hashicrawler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hashicrawler
+  template:
+    metadata:
+      labels:
+        app: hashicrawler
+    spec:
+      containers:
+        - name: hashicrawler
+          image: docker.io/library/hashicrawler:test
+          env:
+          - name: GIN_MODE
+            value: debug
+          ports:
+            - containerPort: 8080
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+            requests:
+              cpu: "1"
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hashicrawler-service
+  namespace: hashicrawler
+spec:
+  selector:
+    app: hashicrawler
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  namespace: hashicrawler
+  name: hashicrawler-restart
+rules:
+  - apiGroups: ["apps"]
+    resources:
+      - deployments
+      - statefulsets
+    verbs:
+      - 'get'
+      - 'list'
+      - 'patch'
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: hashicrawler-restart
+  namespace: hashicrawler
+subjects:
+  - kind: ServiceAccount
+    name: hashicrawler-restart-sa
+    namespace: default
+roleRef:
+  kind: Role
+  name: hashicrawler-restart
+  apiGroup: ""
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: hashicrawler-restart-sa
+  namespace: hashicrawler
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hashicrawler-rollout-restart
+  namespace: hashicrawler
+spec:
+  schedule: "0 23 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: apps-restart-sa
+          containers:
+            - name: kubectl-runner
+              image: bitnami/kubectl
+              command:
+                - /bin/sh
+                - -c
+                - kubectl get -n default -o name deployment | grep hashicrawler | xargs kubectl -n hashicrawler rollout restart
+          restartPolicy: Never

@@ -61,14 +61,7 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request, link string) {
 		if err != nil {
 			fmt.Println(err)
 		}
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-		w.Header().Set("Content-Type", "application/octet-stream")
-
-		_, err = io.Copy(w, buffer)
-		if err != nil {
-			http.Error(w, "Failed to send file", http.StatusInternalServerError)
-			return
-		}
+		sendFile(w, filename, buffer)
 	} else {
 		cwd, _ := os.Getwd()
 		cacheDir := filepath.Join(cwd, "cache")
@@ -83,27 +76,29 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request, link string) {
 				return
 			}
 			writeToFile(buffer, filepath.Join(cacheDir, filename))
-			w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-			w.Header().Set("Content-Type", "application/octet-stream")
-
-			_, err = io.Copy(w, buffer)
-			if err != nil {
-				http.Error(w, "Failed to send file", http.StatusInternalServerError)
+			result := sendFile(w, filename, buffer)
+			if result {
 				return
 			}
 		}
-		buffer, err := os.ReadFile(filepath.Join(cacheDir, filename))
+
+		fileBytes, err := os.ReadFile(filepath.Join(cacheDir, filename))
 		if err != nil {
 			log.Printf("file read error, %s", err)
 			return
 		}
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-		w.Header().Set("Content-Type", "application/octet-stream")
-
-		_, err = io.Copy(w, bytes.NewReader(buffer))
-		if err != nil {
-			http.Error(w, "Failed to send file", http.StatusInternalServerError)
-			return
-		}
+		sendFile(w, filename, bytes.NewBuffer(fileBytes))
 	}
+}
+
+func sendFile(w http.ResponseWriter, filename string, buffer *bytes.Buffer) bool {
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	_, err := io.Copy(w, buffer)
+	if err != nil {
+		http.Error(w, "Failed to send file", http.StatusInternalServerError)
+		return true
+	}
+	return false
 }

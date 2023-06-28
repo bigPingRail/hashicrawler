@@ -14,9 +14,15 @@ This is a Go application that parses releases from a given base URL and provides
 1. Run `go build -o appname cmd/main.go` to build the application.
 
 ## Usage
-
+### As binary
 1. Start the application by running `GIN_MODE=release ./appname -p 8080`.
+1. To enable local caching, add the `-c` flag: `GIN_MODE=release ./appname -p 8080 -c`
 1. Access the web interface at `http://localhost:8080`.
+
+### As Docker container
+1. Build the container: `docker build -t appname:test -f build/Dockerfile .`
+1. Run: `docker run -p 8080:8080 --rm appname:test -c`
+1. To save cache state, you can attach a volume to the container: `docker run -p 8080:8080 -d --rm -v appname_cache:/app/cache appname:test -c`
 
 ## Endpoints
 

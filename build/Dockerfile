@@ -14,6 +14,7 @@ RUN if [ "$INTERNAL" = "true" ]; then \
         echo "deb [trusted=yes] https://nexus.ittests.ru/repository/bullseye-proxy/ bullseye main" > /etc/apt/sources.list; \
     fi 
 RUN apt update && apt -y install ca-certificates curl && apt clean
+RUN mkdir -m 0755 -p /app/cache && chown 1000:1000 /app/cache
 USER 1000
 WORKDIR /app
 COPY --from=builder /src/hashicrawler /app

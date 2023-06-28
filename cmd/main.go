@@ -12,8 +12,7 @@ import (
 )
 
 func main() {
-	// Parse arguments
-	port := flag.Int("p", 8080, "listen port")
+	//Parse arguments
 	flag.Parse()
 
 	// Crawl
@@ -77,6 +76,6 @@ func main() {
 		utils.DownloadHandler(c.Writer, c.Request, link)
 	})
 
-	fmt.Printf("Starting webapp at :%v\n", *port)
-	r.Run(fmt.Sprintf(":%v", *port))
+	fmt.Printf("Starting webapp at :%v\n", *utils.Port)
+	r.Run(fmt.Sprintf(":%v", *utils.Port))
 }

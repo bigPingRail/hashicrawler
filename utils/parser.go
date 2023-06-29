@@ -16,6 +16,48 @@ var (
 	Result      []string
 )
 
+// Private
+func saveLinkToMemory(link, baseUrl string) {
+	resultMutex.Lock()
+	defer resultMutex.Unlock()
+
+	if !strings.HasSuffix(link, "HA256SUMS") && !strings.HasSuffix(link, ".sig") &&
+		(strings.Contains(link, "_linux") || strings.Contains(link, "_darwin") || strings.Contains(link, "_windows")) {
+		link := strings.TrimPrefix(link, baseUrl)
+		Result = append(Result, link)
+	}
+}
+
+func getAbsoluteURL(baseURL, href string) string {
+	if strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") {
+		return href
+	}
+
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		fmt.Println("Error parsing base URL:", err)
+		return ""
+	}
+
+	relative, err := url.Parse(href)
+	if err != nil {
+		fmt.Println("Error parsing relative URL:", err)
+		return ""
+	}
+
+	absoluteURL := base.ResolveReference(relative).String()
+	return absoluteURL
+}
+
+func isRelativeURL(urlString string) bool {
+	u, err := url.Parse(urlString)
+	if err != nil {
+		return false
+	}
+
+	return !u.IsAbs()
+}
+
 // Public
 func CrawlLinks(url string) {
 	resp, err := http.Get(url)
@@ -69,46 +111,4 @@ func CrawlLinks(url string) {
 
 	close(linkChan)
 	wg.Wait()
-}
-
-// Private
-func saveLinkToMemory(link, baseUrl string) {
-	resultMutex.Lock()
-	defer resultMutex.Unlock()
-
-	if !strings.HasSuffix(link, "HA256SUMS") && !strings.HasSuffix(link, ".sig") &&
-		(strings.Contains(link, "_linux") || strings.Contains(link, "_darwin") || strings.Contains(link, "_windows")) {
-		link := strings.TrimPrefix(link, baseUrl)
-		Result = append(Result, link)
-	}
-}
-
-func getAbsoluteURL(baseURL, href string) string {
-	if strings.HasPrefix(href, "http://") || strings.HasPrefix(href, "https://") {
-		return href
-	}
-
-	base, err := url.Parse(baseURL)
-	if err != nil {
-		fmt.Println("Error parsing base URL:", err)
-		return ""
-	}
-
-	relative, err := url.Parse(href)
-	if err != nil {
-		fmt.Println("Error parsing relative URL:", err)
-		return ""
-	}
-
-	absoluteURL := base.ResolveReference(relative).String()
-	return absoluteURL
-}
-
-func isRelativeURL(urlString string) bool {
-	u, err := url.Parse(urlString)
-	if err != nil {
-		return false
-	}
-
-	return !u.IsAbs()
 }

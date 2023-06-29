@@ -13,6 +13,7 @@ import (
 	"log"
 )
 
+// Private
 func downloadFile(u *url.URL) (*bytes.Buffer, error) {
 	buffer := new(bytes.Buffer)
 	response, err := http.Get(u.String())
@@ -47,6 +48,19 @@ func writeToFile(buffer *bytes.Buffer, filePath string) error {
 	return nil
 }
 
+func sendFile(w http.ResponseWriter, filename string, buffer *bytes.Buffer) bool {
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	w.Header().Set("Content-Type", "application/octet-stream")
+
+	_, err := io.Copy(w, buffer)
+	if err != nil {
+		http.Error(w, "Failed to send file", http.StatusInternalServerError)
+		return true
+	}
+	return false
+}
+
+// Public
 func DownloadHandler(w http.ResponseWriter, r *http.Request, link string) {
 	u := &url.URL{
 		Scheme: ConnScheme,
@@ -89,16 +103,4 @@ func DownloadHandler(w http.ResponseWriter, r *http.Request, link string) {
 		}
 		sendFile(w, filename, bytes.NewBuffer(fileBytes))
 	}
-}
-
-func sendFile(w http.ResponseWriter, filename string, buffer *bytes.Buffer) bool {
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
-	w.Header().Set("Content-Type", "application/octet-stream")
-
-	_, err := io.Copy(w, buffer)
-	if err != nil {
-		http.Error(w, "Failed to send file", http.StatusInternalServerError)
-		return true
-	}
-	return false
 }

@@ -1,18 +1,22 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
 	"releases-parser/utils"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-	//Parse arguments
+	// Parse arguments
 	flag.Parse()
 
 	// Crawl
@@ -33,7 +37,15 @@ func main() {
 			result[key] = append(result[key], s)
 		}
 	}
-	// Serve
+
+	// Create a context for the server
+	ctx := context.Background()
+
+	// Create a channel to receive the interrupt signal
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+
+	// Create the Gin router
 	r := gin.Default()
 	r.SetTrustedProxies(nil)
 	r.LoadHTMLGlob("templates/*.tmpl")
@@ -76,6 +88,30 @@ func main() {
 		utils.DownloadHandler(c.Writer, c.Request, link)
 	})
 
-	fmt.Printf("Starting webapp at :%v\n", *utils.Port)
-	r.Run(fmt.Sprintf(":%v", *utils.Port))
+	// Start the server
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%v", *utils.Port),
+		Handler: r,
+	}
+
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			fmt.Printf("Server failed to start: %v", err)
+		}
+	}()
+
+	// Wait for the interrupt signal
+	<-quit
+	fmt.Println("Server shutting down...")
+
+	// Create a context with a timeout
+	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	// Shutdown the server gracefully with the given timeout
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		fmt.Printf("Server shutdown failed: %v", err)
+	}
+
+	fmt.Println("Server gracefully stopped")
 }

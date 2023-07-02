@@ -20,6 +20,6 @@ WORKDIR /app
 COPY --from=builder /src/hashicrawler /app
 COPY --from=builder /src/templates /app/templates
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 CMD curl --fail localhost:8080/hc || exit 1
-STOPSIGNAL SIGTERM
+STOPSIGNAL SIGINT 
 EXPOSE 8080
 ENTRYPOINT ["/app/hashicrawler"]

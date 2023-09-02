@@ -17,6 +17,12 @@ import (
 
 func router(result map[string][]string) *gin.Engine {
 	r := gin.Default()
+	mainGroup := r.Group("/")
+	if *utils.Auth {
+		mainGroup = r.Group("/", gin.BasicAuth(gin.Accounts{
+			utils.GetEnv("P_user", "admin"): utils.GetEnv("P_password", "testpass"),
+		}))
+	}
 	r.SetTrustedProxies(nil)
 	r.LoadHTMLGlob("templates/*.tmpl")
 
@@ -26,7 +32,7 @@ func router(result map[string][]string) *gin.Engine {
 		})
 	})
 
-	r.GET("/", func(c *gin.Context) {
+	mainGroup.GET("/", func(c *gin.Context) {
 		keys := make([]string, 0, len(result))
 		for key := range result {
 			keys = append(keys, key)
@@ -39,7 +45,7 @@ func router(result map[string][]string) *gin.Engine {
 		})
 	})
 
-	r.GET("/values/:key", func(c *gin.Context) {
+	mainGroup.GET("/values/:key", func(c *gin.Context) {
 		key := c.Param("key")
 		values, exists := result[key]
 		if !exists {
@@ -53,7 +59,7 @@ func router(result map[string][]string) *gin.Engine {
 		})
 	})
 
-	r.GET("/download/*link", func(c *gin.Context) {
+	mainGroup.GET("/download/*link", func(c *gin.Context) {
 		link := c.Param("link")
 		utils.DownloadHandler(c.Writer, c.Request, link)
 	})

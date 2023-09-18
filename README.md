@@ -19,6 +19,10 @@ This is a Go application that parses releases from a given base URL and provides
 1. To enable local caching, add the `-c` flag: `GIN_MODE=release ./appname -p 8080 -c`
 1. Access the web interface at `http://localhost:8080`.
 
+#### Enabling Basic Authentication
+1. To enable basic authentication add the `-a` 
+1. The environment variables `P_user` and `P_password` control the username and password. By default, they are set to 'admin' and 'testpass', respectively.
+
 ### As Docker container
 1. Build the container: `docker build -t appname:test -f build/Dockerfile .`
 1. Run: `docker run -p 8080:8080 --rm appname:test -c`
